@@ -7,11 +7,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SearchInput } from "@/components/ui/search-input";
 import { InlineSpinner } from "@/components/ui/states";
 import * as catalogApi from "@/lib/api/catalog";
+import { type CatalogCategory } from "@/lib/catalog-categories";
 import { formatMoney } from "@/lib/format";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { queryKeys } from "@/lib/query-keys";
 import { ApiError, type CatalogItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+export type CatalogPickerItem = Pick<CatalogItem, "id" | "name" | "description" | "price"> & {
+  category?: CatalogCategory;
+};
 
 /** Requires `catalog.read`; a 403 is reported inline rather than thrown away. */
 export function CatalogPicker({
@@ -23,8 +28,8 @@ export function CatalogPicker({
   customSelected = false,
   onSelectCustom,
 }: {
-  value: CatalogItem | null;
-  onChange: (item: CatalogItem) => void;
+  value: CatalogPickerItem | null;
+  onChange: (item: CatalogPickerItem) => void;
   invalid?: boolean;
   placeholder?: string;
   /** Adds a Custom row above search results. */

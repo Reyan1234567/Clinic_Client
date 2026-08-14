@@ -15,6 +15,7 @@ const appointmentVariants: Record<AppointmentStatus, BadgeVariant> = {
   CHECKED_IN: "warning",
   IN_PROGRESS: "warning",
   COMPLETED: "success",
+  CANCELLED: "muted",
   NO_SHOW: "muted",
 };
 

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/lib/toast";
-import { CatalogPicker } from "@/components/catalog/catalog-picker";
+import { CatalogPicker, type CatalogPickerItem } from "@/components/catalog/catalog-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,7 +83,7 @@ export function PlannedProcedureDialog({
   onDone: () => void;
 }) {
   const initialCustom = Boolean(procedure && !procedure.treatmentCatalogId);
-  const [catalogItem, setCatalogItem] = useState<CatalogItem | null>(() =>
+  const [catalogItem, setCatalogItem] = useState<CatalogPickerItem | null>(() =>
     procedure?.treatmentCatalogId
       ? {
           id: procedure.treatmentCatalogId,
@@ -120,7 +120,7 @@ export function PlannedProcedureDialog({
   const isCustom = source === "custom";
   const isCatalog = source === "catalog" && catalogItem;
 
-  const selectCatalog = (item: CatalogItem) => {
+  const selectCatalog = (item: CatalogPickerItem) => {
     setCatalogItem(item);
     setValue("source", "catalog", { shouldValidate: true });
     setValue("title", item.name, { shouldValidate: true });

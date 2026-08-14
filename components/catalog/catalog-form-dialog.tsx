@@ -103,12 +103,19 @@ export function CatalogFormDialog({
       }
     }
 
-    const payload = filled.map((draft) => ({
-      name: draft.name.trim(),
-      description: draft.description.trim() || undefined,
-      category: draft.category,
-      price: Number(draft.price),
-    }));
+    const payload = filled.map((draft): catalogApi.CatalogItemInput => {
+      const category = draft.category;
+      if (!category) {
+        throw new Error(`Missing category for "${draft.name.trim()}"`);
+      }
+
+      return {
+        name: draft.name.trim(),
+        description: draft.description.trim() || undefined,
+        category,
+        price: Number(draft.price),
+      };
+    });
 
     setPending(true);
     setError(null);

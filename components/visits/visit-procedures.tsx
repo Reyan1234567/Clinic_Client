@@ -203,7 +203,7 @@ export function VisitProcedures({
                           className="w-28 overflow-hidden border border-border bg-muted/40"
                         >
                           <AuthImage
-                            fileId={attached.fileId}
+                            src={attached.file.filePath}
                             alt={attached.description || attached.file.fileName}
                             className="aspect-square w-full object-cover"
                           />
