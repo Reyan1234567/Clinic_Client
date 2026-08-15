@@ -1,9 +1,7 @@
 import { ApiError, type ApiErrorBody, type ApiSuccess, type Page } from "@/lib/types";
 
 const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://192.168.100.166:4000"
-).replace(/\/$/, "");
+  process.env.NEXT_PUBLIC_API_URL).replace(/\/$/, "");
 
 export const SESSION_EXPIRED_EVENT = "dental:session-expired";
 
@@ -180,6 +178,42 @@ export async function requestRaw<T>(path: string, init: RequestInit = {}): Promi
 
 export function json(body: unknown): RequestInit {
   return { body: JSON.stringify(body) };
+}
+
+export async function requestBlob(
+  path: string,
+  init: RequestInit = {},
+  allowRefresh = true,
+): Promise<Blob> {
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/pdf,application/json");
+  const response = await fetch(`${getApiUrl()}${path}`, {
+    ...init,
+    headers,
+    credentials: "include",
+  });
+
+  if (response.status === 401 && allowRefresh) {
+    const refreshed = await refreshSessionOnce();
+    if (refreshed) {
+      return requestBlob(path, init, false);
+    }
+    notifySessionExpired();
+    throw new ApiError(401, "Your session has expired");
+  }
+
+  if (!response.ok) {
+    let message = `Request failed (${response.status})`;
+    try {
+      const body = (await response.json()) as Partial<ApiErrorBody>;
+      if (body.error) message = body.error;
+    } catch {
+      // Binary error bodies have no JSON message.
+    }
+    throw new ApiError(response.status, message);
+  }
+
+  return response.blob();
 }
 
 export function getApiUrl() {

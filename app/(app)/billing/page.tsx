@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FileDown } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Can } from "@/components/auth/can";
 import { RequirePermission } from "@/components/auth/require-permission";
@@ -257,15 +258,31 @@ function InvoiceDetail({
         </div>
       ) : null}
 
-      {remaining > 0 ? (
-        <Can permission="payment.create">
-          <Button size="sm" onClick={() => setPayOpen(true)}>
-            Record payment
-          </Button>
-        </Can>
-      ) : (
-        <p className="text-sm text-success">Fully paid</p>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            billingApi
+              .downloadInvoicePdf(invoice.id, invoice.invoiceNumber)
+              .catch((error: unknown) =>
+                toast.error(error instanceof ApiError ? error.message : "Could not download PDF"),
+              )
+          }
+        >
+          <FileDown className="h-3.5 w-3.5" />
+          PDF
+        </Button>
+        {remaining > 0 ? (
+          <Can permission="payment.create">
+            <Button size="sm" onClick={() => setPayOpen(true)}>
+              Record payment
+            </Button>
+          </Can>
+        ) : (
+          <p className="text-sm text-success">Fully paid</p>
+        )}
+      </div>
 
       <RecordPaymentDialog
         open={payOpen}
