@@ -122,7 +122,8 @@ function PatientDetailScreen() {
             New plan
           </Button>
         </Can>
-        <Can permission="visit.create">
+        {/* Desk has visit.create for walk-in; clinical chart needs visit.read. */}
+        <Can allOf={["visit.create", "visit.read"]}>
           <Button size="sm" onClick={() => setVisitOpen(true)}>
             <Stethoscope className="h-3.5 w-3.5" />
             Open visit

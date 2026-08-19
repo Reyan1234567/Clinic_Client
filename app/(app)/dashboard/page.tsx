@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Banknote, CalendarDays, ClipboardList, ListTodo, Receipt, Users, Wallet } from "lucide-react";
 import { AppointmentActions } from "@/components/appointments/appointment-actions";
 import { useAuth } from "@/components/providers/auth-provider";
+import { InvoiceTable } from "@/components/billing/invoice-table";
+import { PeriodSelect } from "@/components/billing/invoice-list-screen";
 import { Can } from "@/components/auth/can";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -19,7 +21,16 @@ import * as billingApi from "@/lib/api/billing";
 import * as patientsApi from "@/lib/api/patients";
 import * as plansApi from "@/lib/api/treatment-plans";
 import * as visitsApi from "@/lib/api/visits";
-import { formatDateOnly, formatDateTime, formatEnum, formatMoney, formatTime, todayKey } from "@/lib/format";
+import {
+  fromKeyForBillingPeriod,
+  formatDateOnly,
+  formatDateTime,
+  formatEnum,
+  formatMoney,
+  formatTime,
+  todayKey,
+} from "@/lib/format";
+import type { BillingPeriod } from "@/lib/format";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -94,6 +105,18 @@ export default function DashboardPage() {
     queryKey: queryKeys.billingStats,
     queryFn: billingApi.getBillingStats,
     enabled: canReadInvoices,
+  });
+  const [pastPeriod, setPastPeriod] = useState<BillingPeriod>("week");
+  const pastBillsParams = {
+    status: "PAID" as const,
+    page: 1,
+    limit: 8,
+    from: fromKeyForBillingPeriod(pastPeriod),
+  };
+  const pastBillsQuery = useQuery({
+    queryKey: queryKeys.invoices(pastBillsParams),
+    queryFn: () => billingApi.listInvoices(pastBillsParams),
+    enabled: isOwnerDashboard && canReadInvoices,
   });
 
   const plansParams = { status: "ACTIVE" as const, page: 1, limit: 1 };
@@ -212,7 +235,7 @@ export default function DashboardPage() {
       loading: billingStatsQuery.isPending,
       icon: Wallet,
       href: "/billing",
-      visible: canReadInvoices && canSeeClinicBilling,
+      visible: canReadInvoices && canSeeClinicBilling && !isOwnerDashboard,
     },
     {
       key: "patients",
@@ -442,7 +465,7 @@ export default function DashboardPage() {
                 href="/billing"
                 className="font-mono text-[10px] uppercase tracking-[0.12em] text-primary hover:underline"
               >
-                To collect
+                Pending bills
               </Link>
             </CardHeader>
 
@@ -465,7 +488,7 @@ export default function DashboardPage() {
                 {dueInvoicesQuery.data!.data.map((invoice) => (
                   <Link
                     key={invoice.id}
-                    href={`/billing?invoice=${invoice.id}`}
+                    href={`/billing/${invoice.id}`}
                     className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/50"
                   >
                     <span className="w-24 shrink-0 font-mono text-[10px] text-muted-foreground">
@@ -494,17 +517,44 @@ export default function DashboardPage() {
         {canSeeClinicBilling ? (
           <Can permission="invoice.read">
             <Card className={isOwnerDashboard ? "xl:col-span-2" : undefined}>
-              <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Recent payments</CardTitle>
-                <Link
-                  href="/billing"
-                  className="font-mono text-[10px] uppercase tracking-[0.12em] text-primary hover:underline"
-                >
-                  Billing
-                </Link>
+              <CardHeader className="flex-row items-center justify-between gap-3">
+                <CardTitle>{isOwnerDashboard ? "Past bills" : "Recent payments"}</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  {isOwnerDashboard ? (
+                    <PeriodSelect
+                      value={pastPeriod}
+                      onChange={setPastPeriod}
+                      className="h-8 w-36"
+                    />
+                  ) : null}
+                  <Link
+                    href="/billing/past"
+                    className="font-mono text-[10px] uppercase tracking-[0.12em] text-primary hover:underline"
+                  >
+                    Past bills
+                  </Link>
+                </div>
               </CardHeader>
 
-              {billingStatsQuery.isPending ? (
+              {isOwnerDashboard ? (
+                pastBillsQuery.isPending ? (
+                  <TableSkeleton rows={4} columns={4} />
+                ) : pastBillsQuery.isError ? (
+                  <ErrorState
+                    className="border-0"
+                    error={pastBillsQuery.error}
+                    onRetry={() => pastBillsQuery.refetch()}
+                  />
+                ) : (pastBillsQuery.data?.data.length ?? 0) === 0 ? (
+                  <EmptyState
+                    className="border-0"
+                    title="No paid bills yet"
+                    description="Collected invoices move here once they are fully paid."
+                  />
+                ) : (
+                  <InvoiceTable invoices={pastBillsQuery.data!.data} />
+                )
+              ) : billingStatsQuery.isPending ? (
                 <TableSkeleton rows={4} columns={3} />
               ) : billingStatsQuery.isError ? (
                 <ErrorState
@@ -518,56 +568,12 @@ export default function DashboardPage() {
                   title="No payments yet"
                   description="Collected payments will show up here."
                 />
-              ) : isOwnerDashboard ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b border-border text-[10px] font-mono uppercase tracking-[0.12em] text-muted-foreground">
-                        <th className="px-4 py-2 font-medium">When</th>
-                        <th className="px-4 py-2 font-medium">Invoice</th>
-                        <th className="px-4 py-2 font-medium">Patient</th>
-                        <th className="px-4 py-2 font-medium">Method</th>
-                        <th className="px-4 py-2 font-medium">Received by</th>
-                        <th className="px-4 py-2 text-right font-medium">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {billingStatsQuery.data!.recentPayments.map((payment) => (
-                        <tr key={payment.id}>
-                          <td className="whitespace-nowrap px-4 py-2.5 font-mono text-xs text-muted-foreground">
-                            {formatDateTime(payment.paymentDate)}
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <Link
-                              href={`/billing?invoice=${payment.invoiceId}`}
-                              className="font-mono text-[10px] text-primary hover:underline"
-                            >
-                              {payment.invoiceNumber}
-                            </Link>
-                          </td>
-                          <td className="px-4 py-2.5 text-sm font-medium">
-                            {payment.patient.fullName}
-                          </td>
-                          <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                            {formatEnum(payment.paymentMethod)}
-                          </td>
-                          <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                            {payment.receivedBy.fullName}
-                          </td>
-                          <td className="px-4 py-2.5 text-right font-mono text-xs tabular-nums">
-                            {formatMoney(payment.amount)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
               ) : (
                 <div className="divide-y divide-border">
                   {billingStatsQuery.data!.recentPayments.map((payment) => (
                     <Link
                       key={payment.id}
-                      href={`/billing?invoice=${payment.invoiceId}`}
+                      href={`/billing/${payment.invoiceId}`}
                       className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/50"
                     >
                       <span className="w-24 shrink-0 font-mono text-[10px] text-muted-foreground">

@@ -7,6 +7,7 @@ import { toast } from "@/lib/toast";
 import { Can } from "@/components/auth/can";
 import { RequirePermission } from "@/components/auth/require-permission";
 import { RowActionMenu, type RowAction } from "@/components/auth/row-actions";
+import { CatalogCategoriesDialog } from "@/components/catalog/catalog-categories-dialog";
 import { CatalogFormDialog } from "@/components/catalog/catalog-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import * as catalogApi from "@/lib/api/catalog";
-import { formatEnum, formatMoney } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { queryKeys } from "@/lib/query-keys";
 import { ApiError, type CatalogItem } from "@/lib/types";
@@ -44,6 +45,7 @@ function CatalogScreen() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogItem | null>(null);
   const [deleting, setDeleting] = useState<CatalogItem | null>(null);
 
@@ -79,6 +81,11 @@ function CatalogScreen() {
         title="Treatment catalog"
         description="List prices used by plans, planned procedures and visit procedures."
       >
+        <Can permission="catalog.update">
+          <Button size="sm" variant="outline" onClick={() => setCategoriesOpen(true)}>
+            Categories
+          </Button>
+        </Can>
         <Can permission="catalog.create">
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="h-3.5 w-3.5" />
@@ -154,7 +161,7 @@ function CatalogScreen() {
                         ) : null}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {formatEnum(item.category)}
+                        {item.category.name}
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs">
                         {formatMoney(item.price)}
@@ -173,6 +180,7 @@ function CatalogScreen() {
       </Card>
 
       <CatalogFormDialog open={createOpen} onOpenChange={setCreateOpen} onDone={invalidate} />
+      <CatalogCategoriesDialog open={categoriesOpen} onOpenChange={setCategoriesOpen} />
 
       {editing ? (
         <CatalogFormDialog

@@ -38,6 +38,7 @@ export const queryKeys = {
 
   catalog: (params?: unknown) => ["catalog", params ?? {}] as const,
   catalogItem: (id: string) => ["catalog", id] as const,
+  catalogCategories: ["catalog", "categories"] as const,
 
   users: (params?: unknown) => ["users", params ?? {}] as const,
   dentists: ["users", "dentists"] as const,

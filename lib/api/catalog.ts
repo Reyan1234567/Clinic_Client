@@ -5,22 +5,26 @@ import {
   requestMessage,
   requestPage,
 } from "@/lib/api/client";
-import type { CatalogCategory } from "@/lib/catalog-categories";
-import type { CatalogItem } from "@/lib/types";
+import type { CatalogCategory, CatalogItem } from "@/lib/types";
 
 export interface CatalogListParams {
   page?: number;
   limit?: number;
   search?: string;
-  category?: CatalogCategory;
+  categoryId?: string;
 }
 
 /** Prices are sent as numbers and come back as decimal strings. */
 export interface CatalogItemInput {
   name: string;
   description?: string;
-  category: CatalogCategory;
+  categoryId: string;
   price: number;
+}
+
+export interface CatalogCategoryInput {
+  name: string;
+  description?: string | null;
 }
 
 /** GET /catalog — requires `catalog.read`. */
@@ -46,4 +50,30 @@ export function updateCatalogItem(id: string, input: Partial<CatalogItemInput>) 
 /** DELETE /catalog/:id — requires `catalog.delete`. Soft delete. */
 export function deleteCatalogItem(id: string) {
   return requestMessage(`/catalog/${id}`, { method: "DELETE" });
+}
+
+/** GET /catalog/categories — requires `catalog.read`. */
+export function listCategories() {
+  return requestData<CatalogCategory[]>("/catalog/categories");
+}
+
+/** POST /catalog/categories — requires `catalog.update`. */
+export function createCategory(input: CatalogCategoryInput) {
+  return requestData<CatalogCategory>("/catalog/categories", {
+    method: "POST",
+    ...json(input),
+  });
+}
+
+/** PATCH /catalog/categories/:id — requires `catalog.update`. */
+export function updateCategory(id: string, input: Partial<CatalogCategoryInput>) {
+  return requestData<CatalogCategory>(`/catalog/categories/${id}`, {
+    method: "PATCH",
+    ...json(input),
+  });
+}
+
+/** DELETE /catalog/categories/:id — requires `catalog.delete`. */
+export function deleteCategory(id: string) {
+  return requestMessage(`/catalog/categories/${id}`, { method: "DELETE" });
 }

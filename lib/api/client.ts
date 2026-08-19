@@ -1,11 +1,9 @@
-import {
-  ApiError,
-  type ApiErrorBody,
-  type ApiSuccess,
-  type Page,
-} from "@/lib/types";
+import { ApiError, type ApiErrorBody, type ApiSuccess, type Page } from "@/lib/types";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://192.168.100.166:4000"
+).replace(/\/$/, "");
 
 export const SESSION_EXPIRED_EVENT = "dental:session-expired";
 
@@ -50,11 +48,7 @@ interface RawResponse {
   body: unknown;
 }
 
-async function send(
-  path: string,
-  init: RequestInit,
-  allowRefresh: boolean,
-): Promise<RawResponse> {
+async function send(path: string, init: RequestInit, allowRefresh: boolean): Promise<RawResponse> {
   const headers = new Headers(init.headers);
   const isFormData = init.body instanceof FormData;
 
@@ -82,10 +76,7 @@ async function send(
   // 204 responses carry no body at all; parsing them would throw.
   if (response.status === 204 || response.status === 205) {
     if (!response.ok) {
-      throw new ApiError(
-        response.status,
-        `Request failed (${response.status})`,
-      );
+      throw new ApiError(response.status, `Request failed (${response.status})`);
     }
     return { status: response.status, body: null };
   }
@@ -137,58 +128,44 @@ function envelope<T>(body: unknown): ApiSuccess<T> {
 }
 
 /** Endpoint returns `{ success, data: T }` — unwraps to `T`. */
-export async function requestData<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
+export async function requestData<T>(path: string, init: RequestInit = {}): Promise<T> {
   const { body } = await send(path, init, true);
   const parsed = envelope<T>(body);
 
   if (parsed.data === undefined) {
-    throw new ApiError(
-      500,
-      "The server response did not include a data payload",
-    );
+    throw new ApiError(500, "The server response did not include a data payload");
   }
   return parsed.data;
 }
 
 /** Endpoint returns `{ success, data: T[], meta }` — unwraps to `Page<T>`. */
-export async function requestPage<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<Page<T>> {
+export async function requestPage<T>(path: string, init: RequestInit = {}): Promise<Page<T>> {
   const { body } = await send(path, init, true);
   const parsed = envelope<T[]>(body);
   const data = parsed.data ?? [];
 
   return {
     data,
-    meta: parsed.meta ?? {
-      totalCount: data.length,
-      page: 1,
-      limit: data.length,
-      totalPage: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    },
+    meta:
+      parsed.meta ?? {
+        totalCount: data.length,
+        page: 1,
+        limit: data.length,
+        totalPage: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
   };
 }
 
 /** Endpoint returns `{ success, message }` — unwraps to the message string. */
-export async function requestMessage(
-  path: string,
-  init: RequestInit = {},
-): Promise<string> {
+export async function requestMessage(path: string, init: RequestInit = {}): Promise<string> {
   const { body } = await send(path, init, true);
   return envelope<never>(body).message ?? "Done";
 }
 
 /** Endpoint returns 204 with an empty body. */
-export async function requestVoid(
-  path: string,
-  init: RequestInit = {},
-): Promise<void> {
+export async function requestVoid(path: string, init: RequestInit = {}): Promise<void> {
   await send(path, init, true);
 }
 
@@ -196,52 +173,13 @@ export async function requestVoid(
  * Endpoint replies without the `{ success, ... }` envelope. Only `/visits/me`
  * and `/health` behave this way.
  */
-export async function requestRaw<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
+export async function requestRaw<T>(path: string, init: RequestInit = {}): Promise<T> {
   const { body } = await send(path, init, true);
   return body as T;
 }
 
 export function json(body: unknown): RequestInit {
   return { body: JSON.stringify(body) };
-}
-
-export async function requestBlob(
-  path: string,
-  init: RequestInit = {},
-  allowRefresh = true,
-): Promise<Blob> {
-  const headers = new Headers(init.headers);
-  headers.set("Accept", "application/pdf,application/json");
-  const response = await fetch(`${getApiUrl()}${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
-
-  if (response.status === 401 && allowRefresh) {
-    const refreshed = await refreshSessionOnce();
-    if (refreshed) {
-      return requestBlob(path, init, false);
-    }
-    notifySessionExpired();
-    throw new ApiError(401, "Your session has expired");
-  }
-
-  if (!response.ok) {
-    let message = `Request failed (${response.status})`;
-    try {
-      const body = (await response.json()) as Partial<ApiErrorBody>;
-      if (body.error) message = body.error;
-    } catch {
-      // Binary error bodies have no JSON message.
-    }
-    throw new ApiError(response.status, message);
-  }
-
-  return response.blob();
 }
 
 export function getApiUrl() {

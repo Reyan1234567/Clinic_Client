@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, Plus, X } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
@@ -23,15 +24,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import * as catalogApi from "@/lib/api/catalog";
-import { CATALOG_CATEGORIES, type CatalogCategory } from "@/lib/catalog-categories";
-import { formatEnum } from "@/lib/format";
+import { queryKeys } from "@/lib/query-keys";
 import { ApiError, type CatalogItem } from "@/lib/types";
 
 interface Draft {
   key: string;
   name: string;
   description: string;
-  category: CatalogCategory | "";
+  categoryId: string;
   price: string;
 }
 
@@ -39,7 +39,7 @@ const emptyDraft = (): Draft => ({
   key: Math.random().toString(36).slice(2),
   name: "",
   description: "",
-  category: "",
+  categoryId: "",
   price: "",
 });
 
@@ -58,6 +58,13 @@ export function CatalogFormDialog({
   item?: CatalogItem | null;
   onDone: () => void;
 }) {
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.catalogCategories,
+    queryFn: catalogApi.listCategories,
+    enabled: open,
+  });
+  const categories = categoriesQuery.data ?? [];
+
   const [drafts, setDrafts] = useState<Draft[]>(() =>
     item
       ? [
@@ -65,7 +72,7 @@ export function CatalogFormDialog({
             key: item.id,
             name: item.name,
             description: item.description ?? "",
-            category: item.category,
+            categoryId: item.categoryId,
             price: item.price,
           },
         ]
@@ -92,7 +99,7 @@ export function CatalogFormDialog({
         setError("Every item needs a name.");
         return;
       }
-      if (!draft.category) {
+      if (!draft.categoryId) {
         setError(`Choose a category for "${draft.name.trim() || "the new item"}".`);
         return;
       }
@@ -103,19 +110,12 @@ export function CatalogFormDialog({
       }
     }
 
-    const payload = filled.map((draft): catalogApi.CatalogItemInput => {
-      const category = draft.category;
-      if (!category) {
-        throw new Error(`Missing category for "${draft.name.trim()}"`);
-      }
-
-      return {
-        name: draft.name.trim(),
-        description: draft.description.trim() || undefined,
-        category,
-        price: Number(draft.price),
-      };
-    });
+    const payload = filled.map((draft): catalogApi.CatalogItemInput => ({
+      name: draft.name.trim(),
+      description: draft.description.trim() || undefined,
+      categoryId: draft.categoryId,
+      price: Number(draft.price),
+    }));
 
     setPending(true);
     setError(null);
@@ -183,18 +183,16 @@ export function CatalogFormDialog({
                 </Field>
                 <Field label="Category" htmlFor={`category-${draft.key}`} required>
                   <Select
-                    value={draft.category || undefined}
-                    onValueChange={(value) =>
-                      update(draft.key, { category: value as CatalogCategory })
-                    }
+                    value={draft.categoryId || undefined}
+                    onValueChange={(value) => update(draft.key, { categoryId: value })}
                   >
                     <SelectTrigger id={`category-${draft.key}`}>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATALOG_CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {formatEnum(category)}
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

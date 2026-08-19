@@ -401,7 +401,7 @@ function PlanItemRow({
           {!item.patientVisits?.some(
             (visit) => visit.status === "OPEN" || visit.status === "WAITING",
           ) ? (
-            <Can permission="visit.create">
+            <Can allOf={["visit.create", "visit.read"]}>
               <Button
                 size="sm"
                 onClick={() => startVisitMutation.mutate()}

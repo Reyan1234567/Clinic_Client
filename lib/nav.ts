@@ -123,7 +123,8 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Receipt,
     anyOf: ["invoice.read"],
     children: [
-      { label: "To collect", href: "/billing", anyOf: ["invoice.read"] },
+      { label: "Pending bills", href: "/billing", anyOf: ["invoice.read"] },
+      { label: "Past bills", href: "/billing/past", anyOf: ["invoice.read"] },
     ],
   },
   {

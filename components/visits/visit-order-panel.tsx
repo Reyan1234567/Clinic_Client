@@ -30,7 +30,6 @@ import { EmptyState, ErrorState, TableSkeleton } from "@/components/ui/states";
 import * as catalogApi from "@/lib/api/catalog";
 import * as procedureApi from "@/lib/api/visit-procedures";
 import { formatBytes, formatDateTime, formatEnum, formatMoney } from "@/lib/format";
-import { CATALOG_CATEGORIES, type CatalogCategory } from "@/lib/catalog-categories";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import { queryKeys } from "@/lib/query-keys";
 import {
@@ -61,7 +60,7 @@ export function VisitOrderPanel({
   const canAttachImage = has("procedure.attachImage") && has("file.upload");
   const canMarkStatus = has("visit.update");
 
-  const [category, setCategory] = useState<CatalogCategory | "all">("all");
+  const [categoryId, setCategoryId] = useState<string | "all">("all");
   const [search, setSearch] = useState("");
   const [checkedCatalogIds, setCheckedCatalogIds] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<VisitProcedureExpanded | null>(null);
@@ -76,25 +75,26 @@ export function VisitOrderPanel({
     queryFn: () => catalogApi.listCatalog({ page: 1, limit: 100 }),
   });
 
-  const items = catalogQuery.data?.data ?? [];
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.catalogCategories,
+    queryFn: catalogApi.listCategories,
+  });
 
-  const categories = useMemo(() => {
-    const fromData = new Set(items.map((item) => item.category));
-    return CATALOG_CATEGORIES.filter((name) => fromData.has(name));
-  }, [items]);
+  const items = catalogQuery.data?.data ?? [];
+  const categories = categoriesQuery.data ?? [];
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return items.filter((item) => {
-      if (category !== "all" && item.category !== category) return false;
+      if (categoryId !== "all" && item.categoryId !== categoryId) return false;
       if (!q) return true;
       return (
         item.name.toLowerCase().includes(q) ||
         (item.description ?? "").toLowerCase().includes(q) ||
-        formatEnum(item.category).toLowerCase().includes(q)
+        item.category.name.toLowerCase().includes(q)
       );
     });
-  }, [items, category, search]);
+  }, [items, categoryId, search]);
 
   const selectedItems = useMemo(
     () => filtered.filter((item) => checkedCatalogIds.has(item.id)),
@@ -225,10 +225,10 @@ export function VisitOrderPanel({
               </p>
               <button
                 type="button"
-                onClick={() => setCategory("all")}
+                onClick={() => setCategoryId("all")}
                 className={cn(
                   "flex w-full items-center gap-1 px-3 py-2 text-left text-sm",
-                  category === "all"
+                  categoryId === "all"
                     ? "bg-[var(--clinical-tab-active)] text-primary-foreground"
                     : "text-[var(--clinical-fg)] hover:bg-[var(--clinical-row-hover)]",
                 )}
@@ -236,20 +236,20 @@ export function VisitOrderPanel({
                 <ChevronRight className="h-3.5 w-3.5 opacity-60" />
                 All services
               </button>
-              {categories.map((name) => (
+              {categories.map((group) => (
                 <button
-                  key={name}
+                  key={group.id}
                   type="button"
-                  onClick={() => setCategory(name)}
+                  onClick={() => setCategoryId(group.id)}
                   className={cn(
                     "flex w-full items-center gap-1 px-3 py-2 text-left text-sm",
-                    category === name
+                    categoryId === group.id
                       ? "bg-[var(--clinical-tab-active)] text-primary-foreground"
                       : "text-[var(--clinical-fg)] hover:bg-[var(--clinical-row-hover)]",
                   )}
                 >
                   <ChevronRight className="h-3.5 w-3.5 opacity-60" />
-                  {formatEnum(name)}
+                  {group.name}
                 </button>
               ))}
             </aside>
@@ -340,7 +340,7 @@ export function VisitOrderPanel({
                               ) : null}
                             </td>
                             <td className="whitespace-nowrap text-xs text-[var(--clinical-muted)]">
-                              {formatEnum(item.category)}
+                              {item.category.name}
                             </td>
                             <td className="whitespace-nowrap text-right font-mono text-xs">
                               {formatMoney(item.price)}

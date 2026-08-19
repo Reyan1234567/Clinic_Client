@@ -17,41 +17,25 @@ import {
 } from "@/components/ui/select";
 import { applyApiErrorToForm } from "@/lib/hooks/use-form-errors";
 import type { PatientInput } from "@/lib/api/patients";
-import { ageFromDateOfBirth, toDateKey, todayKey } from "@/lib/format";
-import type { Patient } from "@/lib/types";
+import {
+  agePartsFromDateOfBirth,
+  dateOfBirthFromAge,
+  formatDateOnly,
+} from "@/lib/format";
+import { ApiError, type Patient } from "@/lib/types";
+
+const optionalInt = (fallback: number) =>
+  z.preprocess(
+    (value) => (value === "" || value === null || value === undefined ? fallback : value),
+    z.coerce.number().int(),
+  );
 
 const schema = z.object({
   fullName: z.string().trim().min(2, "Full name is required"),
   phone: z.string().trim().min(6, "A valid phone number is required"),
   gender: z.enum(["MALE", "FEMALE"]),
-  dateOfBirth: z
-    .string()
-    .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date of birth")
-    .superRefine((value, ctx) => {
-      const [year, month, day] = value.split("-").map(Number);
-      const parsed = new Date(Date.UTC(year, month - 1, day));
-      if (
-        Number.isNaN(parsed.getTime()) ||
-        parsed.getUTCFullYear() !== year ||
-        parsed.getUTCMonth() !== month - 1 ||
-        parsed.getUTCDate() !== day
-      ) {
-        ctx.addIssue({ code: "custom", message: "Enter a valid date of birth" });
-        return;
-      }
-      if (value > todayKey()) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Date of birth cannot be in the future",
-        });
-        return;
-      }
-      const age = ageFromDateOfBirth(value);
-      if (age === null || age < 0 || age > 150) {
-        ctx.addIssue({ code: "custom", message: "Date of birth looks wrong" });
-      }
-    }),
+  ageYears: optionalInt(NaN).pipe(z.number().min(0, "Enter age in years").max(150)),
+  ageMonths: optionalInt(0).pipe(z.number().min(0).max(11, "Months must be 0–11")),
   address: z.string().trim().min(2, "Address is required"),
 });
 
@@ -68,6 +52,7 @@ export function PatientForm({
   onSubmit: (values: PatientInput) => Promise<unknown>;
   onCancel?: () => void;
 }) {
+  const existingAge = agePartsFromDateOfBirth(patient?.dateOfBirth);
   const {
     register,
     handleSubmit,
@@ -81,21 +66,45 @@ export function PatientForm({
       fullName: patient?.fullName ?? "",
       phone: patient?.phone ?? "",
       gender: patient?.gender ?? "MALE",
-      dateOfBirth: patient?.dateOfBirth ? toDateKey(patient.dateOfBirth) : "",
+      ageYears: existingAge?.years ?? ("" as never),
+      ageMonths: existingAge?.months ?? 0,
       address: patient?.address ?? "",
     },
   });
 
   const gender = useWatch({ control, name: "gender" });
-  const dateOfBirth = useWatch({ control, name: "dateOfBirth" });
-  const agePreview = ageFromDateOfBirth(dateOfBirth || undefined);
+  const ageYears = useWatch({ control, name: "ageYears" });
+  const ageMonths = useWatch({ control, name: "ageMonths" });
+  const yearsNum = Number(ageYears);
+  const monthsNum = Number(ageMonths);
+  const estimatedDob =
+    Number.isFinite(yearsNum) &&
+    yearsNum >= 0 &&
+    yearsNum <= 150 &&
+    Number.isFinite(monthsNum) &&
+    monthsNum >= 0 &&
+    monthsNum <= 11
+      ? dateOfBirthFromAge(yearsNum, monthsNum)
+      : null;
 
   const submit = handleSubmit(async (values) => {
     try {
-      await onSubmit(schema.parse(values));
+      const parsed = schema.parse(values);
+      await onSubmit({
+        fullName: parsed.fullName,
+        phone: parsed.phone,
+        gender: parsed.gender,
+        address: parsed.address,
+        dateOfBirth: dateOfBirthFromAge(parsed.ageYears, parsed.ageMonths),
+      });
     } catch (error) {
-      // 422 details are keyed by field name, so they land on the inputs.
       applyApiErrorToForm(error, setError);
+      if (error instanceof ApiError) {
+        const dobMessage = error.fieldErrors?.dateOfBirth?.[0];
+        if (dobMessage) {
+          setError("ageYears", { type: "server", message: dobMessage });
+        }
+      }
     }
   });
 
@@ -123,23 +132,38 @@ export function PatientForm({
           </Field>
 
           <Field
-            label="Date of birth"
-            htmlFor="dateOfBirth"
-            error={errors.dateOfBirth?.message}
+            label="Age"
+            htmlFor="ageYears"
+            error={errors.ageYears?.message ?? errors.ageMonths?.message}
             required
             hint={
-              agePreview !== null
-                ? `Age today: ${agePreview} year${agePreview === 1 ? "" : "s"}`
-                : "Used to compute age."
+              estimatedDob
+                ? `Saved as date of birth ${formatDateOnly(estimatedDob)}`
+                : "Years and months; the server stores an estimated date of birth."
             }
           >
-            <Input
-              id="dateOfBirth"
-              type="date"
-              max={todayKey()}
-              aria-invalid={Boolean(errors.dateOfBirth)}
-              {...register("dateOfBirth")}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="ageYears"
+                type="number"
+                min={0}
+                max={150}
+                inputMode="numeric"
+                placeholder="Years"
+                aria-invalid={Boolean(errors.ageYears)}
+                {...register("ageYears")}
+              />
+              <Input
+                id="ageMonths"
+                type="number"
+                min={0}
+                max={11}
+                inputMode="numeric"
+                placeholder="Months"
+                aria-invalid={Boolean(errors.ageMonths)}
+                {...register("ageMonths")}
+              />
+            </div>
           </Field>
 
           <Field label="Sex" error={errors.gender?.message} required>

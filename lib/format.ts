@@ -39,6 +39,17 @@ export function todayKey() {
   return toDateKey(new Date());
 }
 
+export type BillingPeriod = "today" | "week" | "month" | "all";
+
+/** Start date (inclusive) for a billing period, as YYYY-MM-DD. */
+export function fromKeyForBillingPeriod(period: BillingPeriod) {
+  if (period === "all") return undefined;
+  const on = new Date();
+  if (period === "week") on.setDate(on.getDate() - 6);
+  if (period === "month") on.setDate(on.getDate() - 29);
+  return toDateKey(on);
+}
+
 /** Formats a date-only value as "08 Aug 2026" without any timezone shift. */
 export function formatDateOnly(value: string | null | undefined) {
   if (!value) return "—";
@@ -56,13 +67,46 @@ export function ageFromDateOfBirth(
   value: string | null | undefined,
   on: string = todayKey(),
 ) {
+  const parts = agePartsFromDateOfBirth(value, on);
+  return parts ? parts.years : null;
+}
+
+/** Years and leftover months since a date-only DOB. */
+export function agePartsFromDateOfBirth(
+  value: string | null | undefined,
+  on: string = todayKey(),
+) {
   if (!value) return null;
   const [year, month, day] = toDateKey(value).split("-").map(Number);
   const [cy, cm, cd] = toDateKey(on).split("-").map(Number);
   if (![year, month, day, cy, cm, cd].every(Number.isFinite)) return null;
-  let age = cy - year;
-  if (cm < month || (cm === month && cd < day)) age -= 1;
-  return age;
+
+  let years = cy - year;
+  let months = cm - month;
+  let days = cd - day;
+  if (days < 0) months -= 1;
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  if (years < 0) return null;
+  return { years, months };
+}
+
+/**
+ * Approximate DOB from an age: today minus `years` years and `months` months.
+ * Used when reception enters age instead of a known birth date.
+ */
+export function dateOfBirthFromAge(
+  years: number,
+  months: number = 0,
+  on: string = todayKey(),
+) {
+  const [cy, cm, cd] = toDateKey(on).split("-").map(Number);
+  const date = new Date(Date.UTC(cy, cm - 1, cd));
+  date.setUTCFullYear(date.getUTCFullYear() - years);
+  date.setUTCMonth(date.getUTCMonth() - months);
+  return date.toISOString().slice(0, 10);
 }
 
 /** "Male · 34 yrs · 08 Aug 1991" style line for patient summaries. */

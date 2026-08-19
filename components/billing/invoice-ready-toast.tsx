@@ -45,7 +45,7 @@ export function showInvoiceReadyToast(payload: InvoiceReadyPayload) {
           <div className="mt-2.5 flex items-center gap-2">
             <Button asChild size="sm" className="h-7 px-2.5 text-xs">
               <Link
-                href={`/billing?invoice=${payload.invoiceId}`}
+                href={`/billing/${payload.invoiceId}`}
                 onClick={() => toast.dismiss(id)}
               >
                 Open bill

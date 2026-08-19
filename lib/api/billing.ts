@@ -1,4 +1,4 @@
-import { buildQuery, json, requestBlob, requestData, requestPage } from "@/lib/api/client";
+import { buildQuery, json, requestData, requestPage } from "@/lib/api/client";
 import type {
   BillingStats,
   Invoice,
@@ -13,6 +13,8 @@ export interface InvoiceListParams {
   status?: InvoiceStatus;
   patientId?: number;
   dueOnly?: boolean;
+  /** YYYY-MM-DD — invoices generated on this day or later. */
+  from?: string;
 }
 
 /** GET /billing/stats — requires `invoice.read`. */
@@ -46,18 +48,4 @@ export function createPayment(input: {
     method: "POST",
     ...json(input),
   });
-}
-
-/** GET /billing/invoices/:id/pdf — requires `invoice.read`. */
-export async function downloadInvoicePdf(id: string, invoiceNumber: string) {
-  const blob = await requestBlob(`/billing/invoices/${id}/pdf`);
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${invoiceNumber}.pdf`;
-  link.rel = "noopener";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }

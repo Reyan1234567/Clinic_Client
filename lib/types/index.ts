@@ -1,7 +1,3 @@
-import type { CatalogCategory } from "@/lib/catalog-categories";
-
-export type { CatalogCategory };
-
 /**
  * Response shapes as the API actually serialises them.
  *
@@ -56,6 +52,12 @@ export type PermissionScope = "PERSONAL" | "GLOBAL";
 /* Envelope                                                                   */
 /* -------------------------------------------------------------------------- */
 
+export interface InvoiceListSummary {
+  invoiceCount: number;
+  total: string;
+  average: string;
+}
+
 export interface Pagination {
   totalCount: number;
   page: number;
@@ -63,6 +65,7 @@ export interface Pagination {
   totalPage: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  summary?: InvoiceListSummary;
 }
 
 export interface ApiSuccess<T> {
@@ -208,11 +211,17 @@ export type AppointmentCalendar = Record<string, AppointmentExpanded[]>;
 /* Catalog                                                                    */
 /* -------------------------------------------------------------------------- */
 
+export interface CatalogCategory {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
 export interface CatalogItem {
   id: string;
   name: string;
   description: string | null;
-  /** Service group for the Order screen tree. */
+  categoryId: string;
   category: CatalogCategory;
   /** Decimal as string. */
   price: string;
