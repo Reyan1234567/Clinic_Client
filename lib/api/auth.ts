@@ -28,3 +28,11 @@ export function getMe() {
 export function getHealth() {
   return requestRaw<{ status: string; uptime: number; timestamp: string }>("/health");
 }
+
+/** PATCH /me/signature — requires `file.upload`. Binds an uploaded PNG as the doctor's stamp. */
+export function setMySignature(fileId: string) {
+  return requestData<AuthUser>("/me/signature", {
+    method: "PATCH",
+    ...json({ fileId }),
+  });
+}

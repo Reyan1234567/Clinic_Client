@@ -9,6 +9,7 @@ import { Can } from "@/components/auth/can";
 import { CreatePlanDialog } from "@/components/treatment-plans/create-plan-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import {
   Dialog,
   DialogContent,
@@ -165,16 +166,11 @@ export function TreatmentPlansList({ mode }: { mode: "all" | "mine" }) {
               </TableHeader>
               <TableBody>
                 {query.data.data.map((plan) => (
-                  <TableRow key={plan.id}>
-                    <TableCell className="text-xs">
-                      <Link
-                        href={`/treatment-plans/${plan.id}`}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {plan.title}
-                      </Link>
+                  <ClickableTableRow key={plan.id} href={`/treatment-plans/${plan.id}`}>
+                    <TableCell className="text-xs font-medium">
+                      {plan.title}
                       {plan.description ? (
-                        <p className="max-w-[18rem] truncate text-[11px] text-muted-foreground">
+                        <p className="max-w-[18rem] truncate text-[11px] font-normal text-muted-foreground">
                           {plan.description}
                         </p>
                       ) : null}
@@ -184,6 +180,7 @@ export function TreatmentPlansList({ mode }: { mode: "all" | "mine" }) {
                         <Link
                           href={`/patients/${plan.patient.id}`}
                           className="hover:text-primary hover:underline"
+                          onClick={(event) => event.stopPropagation()}
                         >
                           {plan.patient.fullName}
                         </Link>
@@ -201,7 +198,7 @@ export function TreatmentPlansList({ mode }: { mode: "all" | "mine" }) {
                     <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                       {formatDateOnly(plan.updatedAt)}
                     </TableCell>
-                  </TableRow>
+                  </ClickableTableRow>
                 ))}
               </TableBody>
             </Table>

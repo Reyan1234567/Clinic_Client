@@ -7,6 +7,7 @@ import { AppointmentActions } from "@/components/appointments/appointment-action
 import { Can } from "@/components/auth/can";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { PageHeader } from "@/components/ui/page-header";
 import { AppointmentStatusBadge } from "@/components/ui/status-badge";
 import { EmptyState, ErrorState, TableSkeleton } from "@/components/ui/states";
@@ -86,17 +87,15 @@ export function TodayAppointmentsScreen({
             </TableHeader>
             <TableBody>
               {query.data.map((appointment) => (
-                <TableRow key={appointment.id}>
+                <ClickableTableRow
+                  key={appointment.id}
+                  href={`/patients/${appointment.patient.id}`}
+                >
                   <TableCell className="whitespace-nowrap font-mono text-xs text-primary">
                     {formatTime(appointment.appointmentTime)}
                   </TableCell>
                   <TableCell>
-                    <Link
-                      href={`/patients/${appointment.patient.id}`}
-                      className="text-sm font-medium hover:text-primary hover:underline"
-                    >
-                      {appointment.patient.fullName}
-                    </Link>
+                    <p className="text-sm font-medium">{appointment.patient.fullName}</p>
                     <p className="font-mono text-[10px] text-muted-foreground">
                       {appointment.patient.patientNumber}
                     </p>
@@ -112,10 +111,10 @@ export function TodayAppointmentsScreen({
                   <TableCell>
                     <AppointmentStatusBadge status={appointment.status} />
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(event) => event.stopPropagation()}>
                     <AppointmentActions appointment={appointment} />
                   </TableCell>
-                </TableRow>
+                </ClickableTableRow>
               ))}
             </TableBody>
           </Table>

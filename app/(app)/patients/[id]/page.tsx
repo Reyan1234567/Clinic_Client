@@ -13,6 +13,7 @@ import { CreateVisitDialog } from "@/components/visits/create-visit-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { DataPoint } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
 import { PlanStatusBadge } from "@/components/ui/status-badge";
@@ -280,14 +281,12 @@ function PatientVisitHistory({ patientId }: { patientId: number; phone?: string 
           </TableHeader>
           <TableBody>
             {visits.map((visit) => (
-              <TableRow key={visit.id}>
-                <TableCell className="whitespace-nowrap text-xs">
-                  <Link
-                    href={`/patients/${patientId}/history/${visit.id}`}
-                    className="hover:text-primary hover:underline"
-                  >
-                    {formatDateOnly(visit.createdAt)}
-                  </Link>
+              <ClickableTableRow
+                key={visit.id}
+                href={`/patients/${patientId}/history/${visit.id}`}
+              >
+                <TableCell className="whitespace-nowrap text-xs font-medium">
+                  {formatDateOnly(visit.createdAt)}
                 </TableCell>
                 <TableCell className="truncate text-xs">
                   {visit.chiefComplaint ?? "—"}
@@ -296,7 +295,7 @@ function PatientVisitHistory({ patientId }: { patientId: number; phone?: string 
                 <TableCell className="text-xs text-muted-foreground">
                   {visit.visitProcedures.length}
                 </TableCell>
-              </TableRow>
+              </ClickableTableRow>
             ))}
           </TableBody>
         </Table>
@@ -349,22 +348,15 @@ function PatientTreatmentPlans({ patientId, phone }: { patientId: number; phone:
           </TableHeader>
           <TableBody>
             {plans.map((plan) => (
-              <TableRow key={plan.id}>
-                <TableCell className="text-xs">
-                  <Link
-                    href={`/treatment-plans/${plan.id}`}
-                    className="font-medium hover:text-primary hover:underline"
-                  >
-                    {plan.title}
-                  </Link>
-                </TableCell>
+              <ClickableTableRow key={plan.id} href={`/treatment-plans/${plan.id}`}>
+                <TableCell className="text-xs font-medium">{plan.title}</TableCell>
                 <TableCell>
                   <PlanStatusBadge status={plan.status} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                   {formatDateOnly(plan.createdAt)}
                 </TableCell>
-              </TableRow>
+              </ClickableTableRow>
             ))}
           </TableBody>
         </Table>

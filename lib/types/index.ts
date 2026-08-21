@@ -42,7 +42,13 @@ export type FilePurpose =
   | "IDENTIFICATION"
   | "REFERRAL"
   | "RECEIPT"
+  | "SIGNATURE"
   | "OTHER";
+
+export type CertificateType =
+  | "BIOPSY_REQUEST"
+  | "MEDICAL_CERTIFICATE"
+  | "REFERRAL_FORM";
 
 export type FileBucket = "Visit" | "Procedure" | "Patient";
 
@@ -141,6 +147,8 @@ export interface AuthUser extends UserSummary {
   /** Key + scope pairs; used when UI must distinguish GLOBAL vs PERSONAL. */
   permissionGrants?: { key: string; scope: PermissionScope }[];
   phone?: string;
+  signatureFileId?: string | null;
+  signatureFile?: { id: string; filePath: string } | null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -390,6 +398,51 @@ export interface VisitDetail {
   treatmentPlanItems:
     | (PlanItem & { plannedProcedures: PlannedProcedure[] })
     | null;
+}
+
+export interface BiopsyRequestData {
+  requestingDoctorName: string;
+  requestingDoctorPhone: string;
+  history: string;
+  clinicalAppearance: string;
+  lesionLocation: string;
+  biopsyType: "INCISIONAL" | "EXCISIONAL";
+  biopsyDate: string;
+  clinicalImpression: string;
+}
+
+export interface MedicalCertificateData {
+  diagnosis: string;
+  treatedFrom: string;
+  treatedTo: string;
+  restRequiredDays: string;
+  remark: string;
+}
+
+export interface ReferralFormData {
+  historyExamInvestigation: string;
+  diagnosticImpression: string;
+  treatmentGiven: string;
+  reasonForReferral: string;
+  feedback: string;
+}
+
+export type CertificateData =
+  | BiopsyRequestData
+  | MedicalCertificateData
+  | ReferralFormData;
+
+export interface MedicalCertificate {
+  id: string;
+  visitId: string;
+  patientId: number;
+  doctorId: string;
+  type: CertificateType;
+  data: CertificateData;
+  createdAt: string;
+  updatedAt: string | null;
+  doctor: { id: string; fullName: string; phone: string };
+  signatureFile: { id: string; filePath: string };
 }
 
 export type QueueSource = "APPOINTMENT" | "WALK_IN" | "PLAN_ITEM";

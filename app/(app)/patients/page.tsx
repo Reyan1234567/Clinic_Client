@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Eye, Pencil, Plus, Trash2 } from "lucide-react";
@@ -12,6 +11,7 @@ import { RowActionMenu, type RowAction } from "@/components/auth/row-actions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
@@ -34,6 +34,7 @@ import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import { usePermissions } from "@/lib/hooks/use-permissions";
 import { queryKeys } from "@/lib/query-keys";
 import { ApiError, type Patient } from "@/lib/types";
+import Link from "next/link";
 
 const PAGE_SIZE = 10;
 
@@ -201,27 +202,20 @@ function PatientsScreen() {
                   ];
 
                   return (
-                    <TableRow key={patient.id}>
+                    <ClickableTableRow key={patient.id} href={`/patients/${patient.id}`}>
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         {patient.patientNumber}
                       </TableCell>
-                      <TableCell>
-                        <Link
-                          href={`/patients/${patient.id}`}
-                          className="font-medium hover:text-primary hover:underline"
-                        >
-                          {patient.fullName}
-                        </Link>
-                      </TableCell>
+                      <TableCell className="font-medium">{patient.fullName}</TableCell>
                       <TableCell className="font-mono text-xs">{patient.phone}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {patient.gender === "MALE" ? "M" : "F"} ·{" "}
                         {ageFromDateOfBirth(patient.dateOfBirth) ?? "—"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(event) => event.stopPropagation()}>
                         <RowActionMenu actions={actions} label={`Actions for ${patient.fullName}`} />
                       </TableCell>
-                    </TableRow>
+                    </ClickableTableRow>
                   );
                 })}
               </TableBody>

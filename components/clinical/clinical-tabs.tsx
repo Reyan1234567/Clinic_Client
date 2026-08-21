@@ -16,7 +16,7 @@ export function ClinicalTabs({
   return (
     <div
       className={cn(
-        "flex flex-wrap gap-0 border border-[var(--clinical-border)] bg-[var(--clinical-panel)]",
+        "w-fit gap-0 border border-[var(--clinical-border)] bg-[var(--clinical-panel)]",
         className,
       )}
       role="tablist"

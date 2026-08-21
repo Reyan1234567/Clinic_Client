@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { Can } from "@/components/auth/can";
@@ -9,6 +8,7 @@ import { RequirePermission } from "@/components/auth/require-permission";
 import { CreateVisitDialog } from "@/components/visits/create-visit-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
@@ -37,6 +37,14 @@ import { queryKeys } from "@/lib/query-keys";
 const LIMIT = 10;
 const ALL = "ALL";
 
+/** Matches GET /visits/me `days`: 0 = today from midnight; 6 = past 7 days. */
+type VisitPeriod = "today" | "week";
+
+const PERIODS: { value: VisitPeriod; label: string; days: number }[] = [
+  { value: "today", label: "Today", days: 0 },
+  { value: "week", label: "Past week", days: 6 },
+];
+
 export default function MyVisitsPage() {
   return (
     <RequirePermission anyOf={["visit.read"]} redirectTo="/dashboard">
@@ -48,15 +56,18 @@ export default function MyVisitsPage() {
 function MyVisitsScreen() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<VisitListStatusFilter | typeof ALL>(ALL);
+  const [period, setPeriod] = useState<VisitPeriod>("today");
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const debouncedSearch = useDebouncedValue(search);
+  const days = PERIODS.find((option) => option.value === period)?.days ?? 0;
 
   const params = {
     page,
     limit: LIMIT,
     search: debouncedSearch || undefined,
     status: status === ALL ? undefined : status,
+    days,
   };
 
   const query = useQuery({
@@ -91,6 +102,24 @@ function MyVisitsScreen() {
             className="max-w-xs flex-1"
           />
           <Select
+            value={period}
+            onValueChange={(value) => {
+              setPeriod(value as VisitPeriod);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIODS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={status}
             onValueChange={(value) => {
               setStatus(value as VisitListStatusFilter | typeof ALL);
@@ -116,11 +145,13 @@ function MyVisitsScreen() {
         ) : query.data.data.length === 0 ? (
           <EmptyState
             className="border-0"
-            title={debouncedSearch ? "No matching visits" : "No visits yet"}
+            title={debouncedSearch ? "No matching visits" : "No visits in this period"}
             description={
               debouncedSearch
                 ? "Try another patient name or complaint."
-                : "Create a visit to start recording care for a patient."
+                : period === "today"
+                  ? "No visits assigned to you today. Switch to Past week, or create a visit."
+                  : "No visits in the past week. Create a visit to start recording care."
             }
             action={
               <Can permission="visit.create">
@@ -146,14 +177,9 @@ function MyVisitsScreen() {
               </TableHeader>
               <TableBody>
                 {query.data.data.map((visit) => (
-                  <TableRow key={visit.id}>
-                    <TableCell className="whitespace-nowrap text-xs">
-                      <Link
-                        href={`/visits/${visit.id}`}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {formatDateOnly(visit.createdAt)}
-                      </Link>
+                  <ClickableTableRow key={visit.id} href={`/visits/${visit.id}`}>
+                    <TableCell className="whitespace-nowrap text-xs font-medium">
+                      {formatDateOnly(visit.createdAt)}
                     </TableCell>
                     <TableCell className="text-xs">
                       {visit.patient.fullName}
@@ -173,7 +199,7 @@ function MyVisitsScreen() {
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {visit._count.files}
                     </TableCell>
-                  </TableRow>
+                  </ClickableTableRow>
                 ))}
               </TableBody>
             </Table>

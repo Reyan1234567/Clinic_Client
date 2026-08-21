@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { RequirePermission } from "@/components/auth/require-permission";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { ClickableTableRow } from "@/components/ui/clickable-table-row";
 import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchInput } from "@/components/ui/search-input";
@@ -127,19 +128,15 @@ function AllPatientVisitsScreen() {
               </TableHeader>
               <TableBody>
                 {query.data.data.map((visit) => (
-                  <TableRow key={visit.id}>
-                    <TableCell className="whitespace-nowrap text-xs">
-                      <Link
-                        href={`/visits/${visit.id}`}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {formatDateOnly(visit.createdAt)}
-                      </Link>
+                  <ClickableTableRow key={visit.id} href={`/visits/${visit.id}`}>
+                    <TableCell className="whitespace-nowrap text-xs font-medium">
+                      {formatDateOnly(visit.createdAt)}
                     </TableCell>
                     <TableCell className="text-xs">
                       <Link
                         href={`/patients/${visit.patient.id}`}
                         className="hover:text-primary hover:underline"
+                        onClick={(event) => event.stopPropagation()}
                       >
                         {visit.patient.fullName}
                       </Link>
@@ -172,7 +169,7 @@ function AllPatientVisitsScreen() {
                     <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                       {visit.prescriptions.length} / {visit._count.files}
                     </TableCell>
-                  </TableRow>
+                  </ClickableTableRow>
                 ))}
               </TableBody>
             </Table>

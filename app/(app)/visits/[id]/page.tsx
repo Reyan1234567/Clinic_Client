@@ -19,6 +19,7 @@ import {
 import { PatientDemographicsStrip } from "@/components/clinical/patient-demographics-strip";
 import { PatientHistoryPanel } from "@/components/visits/patient-history-panel";
 import { VisitFiles } from "@/components/visits/visit-files";
+import { VisitCertificates } from "@/components/visits/visit-certificates";
 import { VisitOrderPanel } from "@/components/visits/visit-order-panel";
 import { VisitPrescriptions } from "@/components/visits/visit-prescriptions";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,13 @@ import { usePermissions } from "@/lib/hooks/use-permissions";
 import { queryKeys } from "@/lib/query-keys";
 import { ApiError, type VisitDetail } from "@/lib/types";
 
-type ChartTab = "patient-history" | "history" | "clinical" | "orders";
+type ChartTab =
+  | "patient-history"
+  | "history"
+  | "clinical"
+  | "orders"
+  | "images"
+  | "certificates";
 
 export default function VisitDetailPage() {
   return (
@@ -144,7 +151,7 @@ function VisitDetailScreen() {
         size="sm"
         eyebrow={`Clinical / ${formatDateOnly(visit.createdAt)}`}
         title={visit.title || visit.patient.fullName}
-        description="History, clinical data, orders, and close"
+        description="History, images, certificates, clinical data, and orders"
       >
         <VisitStateBadge finishedAt={visit.finishedAt} status={visit.status} />
       </PageHeader>
@@ -203,6 +210,18 @@ function VisitDetailScreen() {
           >
             View orders
           </ClinicalActionButton>
+          <ClinicalActionButton
+            active={chartTab === "images"}
+            onClick={() => setChartTab("images")}
+          >
+            Images
+          </ClinicalActionButton>
+          <ClinicalActionButton
+            active={chartTab === "certificates"}
+            onClick={() => setChartTab("certificates")}
+          >
+            Certificates
+          </ClinicalActionButton>
           {/* {inChair ? (
             <Can permission="visit.update">
               <ClinicalActionButton onClick={() => setEditOpen(true)}>
@@ -253,20 +272,12 @@ function VisitDetailScreen() {
           {chartTab === "history" ? (
             <div className="grid gap-3 lg:grid-cols-2">
               <HistoryPanel visit={visit} />
-              <div className="space-y-3">
-                <VisitPrescriptions
-                  visitId={visit.id}
-                  prescriptions={visit.prescriptions}
-                  visitFinished={!inChair}
-                  onChanged={refresh}
-                />
-                <VisitFiles
-                  visitId={visit.id}
-                  files={visit.files}
-                  visitFinished={!inChair}
-                  onChanged={refresh}
-                />
-              </div>
+              <VisitPrescriptions
+                visitId={visit.id}
+                prescriptions={visit.prescriptions}
+                visitFinished={!inChair}
+                onChanged={refresh}
+              />
             </div>
           ) : null}
 
@@ -299,6 +310,19 @@ function VisitDetailScreen() {
               visitFinished={!inChair}
               onChanged={refresh}
             />
+          ) : null}
+
+          {chartTab === "images" ? (
+            <VisitFiles
+              visitId={visit.id}
+              files={visit.files}
+              visitFinished={!inChair}
+              onChanged={refresh}
+            />
+          ) : null}
+
+          {chartTab === "certificates" ? (
+            <VisitCertificates visit={visit} visitFinished={!inChair} />
           ) : null}
         </div>
       </ClinicalSurface>

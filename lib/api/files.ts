@@ -2,7 +2,7 @@ import { requestData, requestMessage } from "@/lib/api/client";
 import type { FileRecord } from "@/lib/types";
 
 /** Which bucket the upload lands in. */
-export type UploadPurpose = "patient" | "visit" | "procedure";
+export type UploadPurpose = "patient" | "visit" | "procedure" | "signature";
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;

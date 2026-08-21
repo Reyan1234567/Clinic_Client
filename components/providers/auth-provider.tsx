@@ -22,6 +22,7 @@ interface AuthContextValue {
   permissionsMissing: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -91,9 +92,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   }, [queryClient, router]);
 
+  const refreshUser = useCallback(async () => {
+    const me = await authApi.getMe();
+    adopt(me);
+  }, [adopt]);
+
   const value = useMemo(
-    () => ({ user, loading, permissionsMissing, login, logout }),
-    [user, loading, permissionsMissing, login, logout],
+    () => ({ user, loading, permissionsMissing, login, logout, refreshUser }),
+    [user, loading, permissionsMissing, login, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

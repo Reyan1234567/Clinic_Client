@@ -27,6 +27,7 @@ export const queryKeys = {
   patientVisitHistory: (patientId: number, visitId: string) =>
     ["visits", "for-patient", patientId, visitId] as const,
   visit: (id: string) => ["visit", id] as const,
+  visitCertificates: (visitId: string) => ["visit", visitId, "certificates"] as const,
   visitQueueToday: ["visits", "queue", "today"] as const,
   myVisitQueueToday: ["visits", "queue", "today", "me"] as const,
 
