@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { Can } from "@/components/auth/can";
 import { RequirePermission } from "@/components/auth/require-permission";
@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState, ErrorState, TableSkeleton } from "@/components/ui/states";
+import { InvoiceStatusBadge } from "@/components/ui/status-badge";
 import {
   Table,
   TableBody,
@@ -28,10 +29,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from "@/components/providers/auth-provider";
+import type { PaymentRecordedPayload } from "@/components/providers/billing-realtime";
 import * as visitsApi from "@/lib/api/visits";
 import type { VisitListStatusFilter } from "@/lib/api/visits";
 import { formatDateOnly } from "@/lib/format";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { useSocketEvent } from "@/lib/hooks/use-socket-event";
 import { queryKeys } from "@/lib/query-keys";
 
 const LIMIT = 10;
@@ -54,6 +58,8 @@ export default function MyVisitsPage() {
 }
 
 function MyVisitsScreen() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<VisitListStatusFilter | typeof ALL>(ALL);
   const [period, setPeriod] = useState<VisitPeriod>("today");
@@ -73,6 +79,11 @@ function MyVisitsScreen() {
   const query = useQuery({
     queryKey: queryKeys.myVisits(params),
     queryFn: () => visitsApi.listMyVisits(params),
+  });
+
+  useSocketEvent<PaymentRecordedPayload>("payment.recorded", (payload) => {
+    if (payload.dentistId && user?.id && payload.dentistId !== user.id) return;
+    void queryClient.invalidateQueries({ queryKey: ["visits", "me"] });
   });
 
   return (
@@ -139,7 +150,7 @@ function MyVisitsScreen() {
         </div>
 
         {query.isPending ? (
-          <TableSkeleton columns={5} />
+          <TableSkeleton columns={6} />
         ) : query.isError ? (
           <ErrorState error={query.error} onRetry={() => query.refetch()} className="border-0" />
         ) : query.data.data.length === 0 ? (
@@ -172,6 +183,7 @@ function MyVisitsScreen() {
                   <TableHead>Chief complaint</TableHead>
                   <TableHead>Diagnosis</TableHead>
                   <TableHead>Procedures</TableHead>
+                  <TableHead>Payment</TableHead>
                   <TableHead>Files</TableHead>
                 </TableRow>
               </TableHeader>
@@ -195,6 +207,13 @@ function MyVisitsScreen() {
                     </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {visit.visitProcedures.length}
+                    </TableCell>
+                    <TableCell>
+                      {visit.invoice ? (
+                        <InvoiceStatusBadge status={visit.invoice.status} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {visit._count.files}

@@ -51,7 +51,7 @@ export function VisitCertificates({
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const hasSignature = Boolean(user?.signatureFile.id);
+  const hasSignature = Boolean(user?.signatureFile?.id);
   const printRef = useRef<HTMLDivElement>(null);
 
   const [createType, setCreateType] = useState<CertificateType | null>(null);

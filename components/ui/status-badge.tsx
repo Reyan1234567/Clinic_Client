@@ -2,6 +2,7 @@ import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { formatEnum } from "@/lib/format";
 import type {
   AppointmentStatus,
+  InvoiceStatus,
   PlanItemStatus,
   PlannedProcedureStatus,
   TreatmentPlanStatus,
@@ -30,6 +31,12 @@ const plannedVariants: Record<PlannedProcedureStatus, BadgeVariant> = {
   TRANSFERRED: "success",
 };
 
+const invoiceVariants: Record<InvoiceStatus, BadgeVariant> = {
+  UNPAID: "warning",
+  PARTIALLY_PAID: "default",
+  PAID: "success",
+};
+
 export function AppointmentStatusBadge({ status }: { status: AppointmentStatus }) {
   return <Badge variant={appointmentVariants[status]}>{formatEnum(status)}</Badge>;
 }
@@ -54,6 +61,10 @@ export function ProcedureStatusBadge({ status }: { status: VisitProcedureStatus 
 
 export function PlannedProcedureStatusBadge({ status }: { status: PlannedProcedureStatus }) {
   return <Badge variant={plannedVariants[status]}>{formatEnum(status)}</Badge>;
+}
+
+export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
+  return <Badge variant={invoiceVariants[status]}>{formatEnum(status)}</Badge>;
 }
 
 export function VisitStateBadge({

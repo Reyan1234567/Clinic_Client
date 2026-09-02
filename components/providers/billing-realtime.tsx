@@ -20,6 +20,8 @@ export type PaymentRecordedPayload = {
   paymentMethod: string;
   patientId: number;
   patientName: string;
+  dentistId?: string | null;
+  visitId?: string | null;
   receivedById: string;
   receivedByName: string;
   paymentDate: string;

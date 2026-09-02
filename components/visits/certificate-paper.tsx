@@ -415,9 +415,19 @@ const ReferralPaper = forwardRef<
             <Value variant="dotted" value={issued} />
           </div>
         </div>
-        <div className="flex items-baseline gap-1.5 mb-1.5 w-full">
-          <span className="flex-none font-bold whitespace-nowrap min-w-[50px]">MRN</span>
-          <Value variant="dotted" value={visit.patient.patientNumber} />
+        <div className="flex items-baseline gap-1.5 mb-1.5 w-full justify-between">
+          <div className="flex min-w-0 flex-1 items-baseline gap-1.5">
+            <span className="flex-none font-bold whitespace-nowrap min-w-[50px]">
+              MRN
+            </span>
+            <Value variant="dotted" value={visit.patient.patientNumber} />
+          </div>
+          <div className="flex min-w-0 flex-1 items-baseline gap-1.5">
+            <span className="flex-none ml-5 font-bold whitespace-nowrap">
+              Referred to
+            </span>
+            <Value variant="dotted" value={data.referredTo} />
+          </div>
         </div>
       </div>
 

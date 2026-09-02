@@ -164,7 +164,7 @@ export function SignatureEditor({ onSaved }: { onSaved?: () => void }) {
 
       {mode === "draw" ? (
         <div className="space-y-2">
-          <div className="border border-border bg-white">
+          <div className="mx-auto w-full max-w-[300px] border border-border bg-white">
             {mounted ? (
               <SignatureCanvas
                 ref={padRef}
@@ -177,7 +177,7 @@ export function SignatureEditor({ onSaved }: { onSaved?: () => void }) {
               <div className="h-40" />
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center justify-end gap-2">
             <Button
               type="button"
               size="sm"

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { LogOut, Menu, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { visibleNavItems } from "@/lib/nav";
@@ -10,8 +11,20 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { HeranMark } from "@/components/brand/heran-mark";
 import { LumenCredit } from "@/components/brand/lumen-credit";
+import * as billingApi from "@/lib/api/billing";
+import * as visitsApi from "@/lib/api/visits";
 import { initials } from "@/lib/format";
+import { queryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
+
+function NavCountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center bg-destructive px-1.5 font-mono text-[10px] font-semibold text-destructive-foreground">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export function Sidebar() {
   const { user, logout } = useAuth();
@@ -23,7 +36,46 @@ export function Sidebar() {
   const [accountOpen, setAccountOpen] = useState(false);
   const close = () => setOpen(false);
 
+  const canReadInvoices = has("invoice.read");
+  const canReadMyFloor = hasScope("visit.read", "PERSONAL");
+
+  const billingStatsQuery = useQuery({
+    queryKey: queryKeys.billingStats,
+    queryFn: billingApi.getBillingStats,
+    enabled: Boolean(user) && canReadInvoices,
+    refetchInterval: 30_000,
+  });
+
+  const myQueueQuery = useQuery({
+    queryKey: queryKeys.myVisitQueueToday,
+    queryFn: visitsApi.getMyTodayQueue,
+    enabled: Boolean(user) && canReadMyFloor,
+    refetchInterval: 30_000,
+  });
+
   if (!user) return null;
+
+  const dueCount = billingStatsQuery.data?.dueCount ?? 0;
+  const waitingCount = myQueueQuery.data?.waiting.length ?? 0;
+
+  const badgeForHref = (href: string) => {
+    if (href === "/billing" || href.startsWith("/billing?")) return dueCount;
+    if (href === "/visits/me/queue") return waitingCount;
+    return 0;
+  };
+
+  const badgeForParent = (label: string, href: string, childHrefs: string[]) => {
+    if (label === "Billing" || childHrefs.some((h) => h === "/billing")) {
+      return dueCount;
+    }
+    if (
+      label === "Clinical" ||
+      childHrefs.some((h) => h === "/visits/me/queue")
+    ) {
+      return waitingCount;
+    }
+    return badgeForHref(href);
+  };
 
   const items = visibleNavItems(has, hasScope);
   const profileActive = pathname === "/profile" || pathname.startsWith("/profile/");
@@ -61,7 +113,14 @@ export function Sidebar() {
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1 truncate">{item.label}</span>
+              <span className="min-w-0 flex-1 truncate">{item.label}</span>
+              <NavCountBadge
+                count={badgeForParent(
+                  item.label,
+                  item.href,
+                  children.map((child) => child.href),
+                )}
+              />
             </Link>
 
             {isActive && children.length > 0 ? (
@@ -74,13 +133,14 @@ export function Sidebar() {
                       href={child.href}
                       onClick={close}
                       className={cn(
-                        "block py-1.5 pl-11 pr-4 text-sm transition-colors",
+                        "flex items-center gap-2 py-1.5 pl-11 pr-4 text-sm transition-colors",
                         childActive
                           ? "font-medium text-primary"
                           : "text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      {child.label}
+                      <span className="min-w-0 flex-1 truncate">{child.label}</span>
+                      <NavCountBadge count={badgeForHref(child.href)} />
                     </Link>
                   );
                 })}

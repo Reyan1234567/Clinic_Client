@@ -225,7 +225,7 @@ export default function DashboardPage() {
       value: formatMoney(billingStatsQuery.data?.collectedToday),
       loading: billingStatsQuery.isPending,
       icon: Banknote,
-      href: "/billing",
+      href: "/billing/past",
       visible: canReadInvoices && canSeeClinicBilling,
     },
     {

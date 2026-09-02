@@ -48,6 +48,7 @@ const medicalSchema = z.object({
 });
 
 const referralSchema = z.object({
+  referredTo: z.string().trim().min(1, "Required"),
   historyExamInvestigation: z.string().trim().min(1, "Required"),
   diagnosticImpression: z.string().trim().min(1, "Required"),
   treatmentGiven: z.string().trim().min(1, "Required"),
@@ -315,7 +316,7 @@ function ReferralForm({
 }) {
   const form = useForm<ReferralFormData>({
     resolver: zodResolver(referralSchema),
-    defaultValues: defaults,
+    defaultValues: { referredTo: "", ...defaults },
   });
 
   useEffect(() => {
@@ -331,6 +332,13 @@ function ReferralForm({
           <DialogTitle>{CERTIFICATE_LABELS.REFERRAL_FORM}</DialogTitle>
         </DialogHeader>
         <form className="grid gap-3" onSubmit={form.handleSubmit(onSubmit)}>
+          <Field
+            label="Referred to"
+            error={form.formState.errors.referredTo?.message}
+            required
+          >
+            <Input {...form.register("referredTo")} />
+          </Field>
           <Field
             label="History, examination and investigation"
             error={form.formState.errors.historyExamInvestigation?.message}

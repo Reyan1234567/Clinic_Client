@@ -148,7 +148,7 @@ export function VisitQueueScreen({ mode }: { mode: "clinic" | "mine" }) {
         </div>
 
         <ClinicalTabs
-          className="border-x-0 border-t-0"
+          className="border-x-0 border-t-0 [&_[role=tab]:last-child]:border-r"
           value={tab}
           onChange={(id) => setTab(id as Tab)}
           tabs={[

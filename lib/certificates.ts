@@ -57,6 +57,7 @@ export function defaultMedicalCertificateData(
 
 export function defaultReferralData(visit: VisitDetail): ReferralFormData {
   return {
+    referredTo: "",
     historyExamInvestigation: joinNotes(
       visit.chiefComplaint,
       visit.clinicalFindings,

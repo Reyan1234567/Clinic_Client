@@ -342,6 +342,7 @@ export interface VisitListItem {
   createdAt: string;
   patient: { id: number; fullName: string; phone: string };
   visitProcedures: { id: string; title: string; status: VisitProcedureStatus }[];
+  invoice: { status: InvoiceStatus } | null;
   _count: { files: number };
 }
 
@@ -420,6 +421,7 @@ export interface MedicalCertificateData {
 }
 
 export interface ReferralFormData {
+  referredTo: string;
   historyExamInvestigation: string;
   diagnosticImpression: string;
   treatmentGiven: string;
