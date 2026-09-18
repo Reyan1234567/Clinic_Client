@@ -64,7 +64,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
           <HeranMark size={64} priority className="mb-4" />
-          <p className="text-lg font-semibold tracking-tight">Heran Specialty Dental</p>
+          <p className="text-lg font-semibold tracking-tight">Dental Specialty Dental</p>
           <span className="tech-label mt-1">Clinic management system</span>
         </div>
 

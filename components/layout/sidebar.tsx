@@ -182,7 +182,7 @@ export function Sidebar() {
           <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
             <HeranMark size={32} />
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-sm font-semibold">Heran Specialty Dental</p>
+              <p className="truncate text-sm font-semibold">Dental Specialty Dental</p>
               <span className="tech-label">Clinic system</span>
             </div>
           </Link>

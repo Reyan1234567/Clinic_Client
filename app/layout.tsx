@@ -17,10 +17,10 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Heran Specialty Dental",
-    template: "%s · Heran Specialty Dental",
+    default: "Dental Specialty Clinic",
+    template: "%s · Dental Specialty Clinic",
   },
-  description: "Clinic management system for Heran Specialty Dental Clinic",
+  description: "Clinic management system for Dental Specialty Clinic",
   icons: {
     icon: [{ url: "/heran-dark.png", type: "image/png" }],
     apple: [{ url: "/heran-dark.png", type: "image/png" }],

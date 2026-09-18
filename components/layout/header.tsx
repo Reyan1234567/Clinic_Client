@@ -31,7 +31,7 @@ export function Header() {
   return (
     <header className="z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 sm:px-6">
       <div className="flex min-w-0 items-center gap-2 pl-12 lg:pl-0">
-        <span className="tech-label">Heran Specialty Dental</span>
+        <span className="tech-label">Dental Specialty Dental</span>
         <span className="text-border">/</span>
         <span className="truncate font-mono text-[11px] uppercase tracking-[0.12em] text-foreground">
           {currentSection(pathname)}
